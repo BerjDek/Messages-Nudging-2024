@@ -14,7 +14,7 @@ data_2023 %>%
 # mean difference 12.14184 t = 3.0093, df = 140, p-value = 0.003106 Significant
 
 
-  
+    
 
 ### Difference between  2021 & 2022  -------
 
