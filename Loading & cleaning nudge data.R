@@ -89,6 +89,7 @@ raw_message_data_2024 <- raw_message_data_2024 %>%
   group_by(User_ID) %>%
   mutate(Repeat_User = n_distinct(Year) > 1)%>%
   mutate(type = tools::toTitleCase(type)) %>% 
+  mutate(type = recode(type, "Prevention" = "Vigilant", "Promotion" = "Eager"))%>% 
   ungroup() 
 
 

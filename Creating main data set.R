@@ -79,3 +79,6 @@ write.csv(data_2024, "G:/My Drive/Article about Messages/Messages-Nudging-2024/M
 write.csv(data, "G:/My Drive/Article about Messages/Messages-Nudging-2024/MainData.csv", row.names = FALSE)
 
 rm(Unified_2023,Unified_2024)
+
+
+

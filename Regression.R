@@ -5,29 +5,28 @@
 
 
 # Loading data sets -------------------------------------------------------
-reg_data_2023 <- read.csv("reg_data_2023.csv")%>%
+reg_data_2023 <- read.csv("reg_data_2023.csv") %>%
   mutate(
     User_ID = as.factor(User_ID),
     Msg_Type = as.factor(Msg_Type),
     Gender = as.factor(Gender),
     Date = as.Date(Date))
 
-reg_data_2023$Day_of_Year <- (yday(reg_data_2023$Date)- 211)/30
-
-reg_data_2023$DayIndex <- as.integer(
-  difftime(reg_data_2023$Date, "2023-04-30", units = "days")
-) + 1   
- 
     
-reg_data_2024 <- read.csv("reg_data_2024.csv")
+reg_data_2024 <- read.csv("reg_data_2024.csv")  %>%
+  mutate(
+    User_ID = as.factor(User_ID),
+    Msg_Type = as.factor(Msg_Type),
+    Gender = as.factor(Gender),
+    Date = as.Date(Date))
+
 
 reg_data <- bind_rows(reg_data_2023, reg_data_2024)
-
 
 summary(reg_data_2023)
 summary(reg_data_2024)
 
-# Note you can remove the users that have not fillled a single report in 2023 as it doesnt really chage the results
+# Note you can remove the users that have not filled a single report in 2023 as it doesn't really change the results
 # for now i kept it with the full data
 
 # reg_data_2023_2 <- reg_data_2023 %>%
@@ -58,10 +57,11 @@ summary(glmer(Report ~ Msg_Received + (1 + Day_of_Year | User_ID),
 summary(glmer(
   Report ~ Msg_Received + Day_of_Year + (1 + Day_of_Year | User_ID),
   family = binomial, data = reg_data_2023
-))  ## for teh explanation of this model go to google docs, messages-nudging-2024, titled model explanation
+))  ## for the explanation of this model go to Google docs, messages-nudging-2024, titled model explanation
 
 
 # Receiving a nudge significantly increases the probability of reporting (β = 0.524, p < 0.001, exact p = 7.66e-13)
+
 
 
 
@@ -73,14 +73,9 @@ summary(glmer(total_reports ~ Msg_Received + (1 + Day_of_Year|User_ID),
                data = reg_data_2023, 
                family = poisson)) 
 
-
-
-summary(glmer(total_reports ~ Msg_Received + Day_of_Year + (1 + Day_of_Year | User_ID), 
-              data = reg_data_2023, 
-              family = poisson)) 
-
-
 # receiving a nudge significantly increases the total number of reports (β = 0.338, p < 0.001, exact p = 1.05e-13).
+
+
 
 
 ### Does the framing of  the nudge matter ----------------------
@@ -102,9 +97,6 @@ summary(glmer(Report ~ Msg_Type + (1 + Day_of_Year | User_ID),
                family = binomial(link = "logit")))
 
 
-summary(glmer(Report ~ Msg_Type + Day_of_Year + (1 + Day_of_Year | User_ID),
-              data = reg_data_2023,
-              family = binomial(link = "logit")))
 
 # all framed nudges significantly increase the probability of reporting compared to no nudge, with the Vigilant frame having 
 # the strongest effect (β = 0.640, p < 0.001, exact p = 2.35e-08), followed by Eager (β = 0.563, p < 0.001, exact p = 1.61e-05) 
@@ -114,66 +106,16 @@ summary(glmer(Report ~ Msg_Type + Day_of_Year + (1 + Day_of_Year | User_ID),
 
 ### Does agreement between framing and regulatory orientation impact reporting ----------------------
 
-#### Vigilant/Prevention ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-               data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Prevention", ], 
-               family = binomial(link = "logit")))
+# older version of calculating this can be found in 2023 assessment
 
-
-
-summary(glmer( Report ~ Orientation_Nudge_Agreement + Day_of_Year + (1 + Day_of_Year | User_ID), 
-              data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Prevention", ], 
-              family = binomial(link = "logit")))
-
-#new result near significance for vigilant 0.0822  and increases
-# new results insignificant p = 0.203 
-# estimated log-odds increase of 0.32 (SE = 0.159, p = 0.044)
-
-
-#### Eager/Promotion ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-               data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Promotion", ], 
-               family = binomial(link = "logit")))
-
-summary(glmer(Report ~ Orientation_Nudge_Agreement + Day_of_Year + (1 + Day_of_Year | User_ID),
-              data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Promotion", ], 
-              family = binomial(link = "logit")))
-
-# insiginificant 0.92
-# new results STILL insignificant p=  0.265
-# estimated log-odds of -0.53 (SE = 0.476, p = 0.269)
-
-#### Neutral/Neutral (not sure if important) ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-               data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Neutral", ], 
-               family = binomial(link = "logit")))
-
-
-summary(glmer(Report ~ Orientation_Nudge_Agreement + Day_of_Year + (1 + Day_of_Year | User_ID),
-              data = reg_data_2023[reg_data_2023$Reg_Orientation_Cat == "Neutral", ], 
-              family = binomial(link = "logit")))
-
-#insiginificant with outliers estimated log-odds of -0.12 (SE = 0.294, p = 0.692)
-
-
-
-
-### try this to see if agreement matters for all
-
-data_with_message <- subset(
+reg_data_nudged_2023<- subset(
   reg_data_2023, 
   Msg_Received == 1  # or however you mark "a message was received"
 )
 
 summary(glmer(
   Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
-  data = data_with_message,
-  family = binomial
-))
-
-summary(glmer(
-  Report ~ Reg_Orientation_Cat * Orientation_Nudge_Agreement + (1 | User_ID),
-  data = data_with_message,
+  data = reg_data_nudged_2023,
   family = binomial
 ))
 
@@ -181,20 +123,20 @@ summary(glmer(
 
 summary(glmer(
   Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
-  data = subset(data_with_message, Reg_Orientation_Cat == "Prevention"),
+  data = subset(reg_data_nudged_2023, Reg_Orientation_Cat == "Prevention"),
   family = binomial
 ))
 
 
 summary(glmer(
   Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
-  data = subset(data_with_message, Reg_Orientation_Cat == "Neutral"),
+  data = subset(reg_data_nudged_2023, Reg_Orientation_Cat == "Neutral"),
   family = binomial
 ))
 
 summary(glmer(
   Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
-  data = subset(data_with_message, Reg_Orientation_Cat == "Promotion"),
+  data = subset(reg_data_nudged_2023, Reg_Orientation_Cat == "Promotion"),
   family = binomial
 ))
 
@@ -203,9 +145,14 @@ summary(glmer(
 
 
 ### Does Nudging (general) increase the chance of reporting? ------------------------------
-summary(glmer(Report ~ Msg_Received + (1 + Date | User_ID),
+summary(glmer(Report ~ Msg_Received + (1 + Day_of_Year | User_ID),
               data = reg_data_2024,
               family = binomial))
+
+summary(glmer(
+  Report ~ Msg_Received + Day_of_Year + (1 + Day_of_Year | User_ID),
+  family = binomial, data = reg_data_2024
+)) 
 
 
 # Receiving a nudge significantly increases the probability of reporting (β = 0.524, p < 0.001, exact p = 7.66e-13)
@@ -216,15 +163,14 @@ summary(glmer(Report ~ Msg_Received + (1 + Date | User_ID),
 ### Does nudging increase the total number (intensity) of reporting ------------------------------
 
 
-summary(glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
+summary(glmer(total_reports ~ Msg_Received + (1 + Day_of_Year|User_ID), 
               data = reg_data_2024, 
               family = poisson)) 
 
-
-
-
-
 # receiving a nudge significantly increases the total number of reports (β = 0.338, p < 0.001, exact p = 1.05e-13).
+
+
+
 
 
 ### Does the framing of  the nudge matter ----------------------
@@ -233,9 +179,18 @@ levels(reg_data_2024$Msg_Type)
 reg_data_2024$Msg_Type <- relevel(reg_data_2024$Msg_Type, ref = "None") #set the level to none
 
 
-summary(glmer(Report ~ Msg_Type + (1 + Date | User_ID),
+
+
+summary(glmer(Report ~ Msg_Type + (1 | User_ID),
               data = reg_data_2024,
               family = binomial(link = "logit")))
+
+
+
+summary(glmer(Report ~ Msg_Type + (1 + Day_of_Year | User_ID),
+              data = reg_data_2024,
+              family = binomial(link = "logit")))
+
 
 
 
@@ -276,32 +231,100 @@ summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID),
 
 
 
+
+reg_data_nudged_2024<- subset(
+  reg_data_2024, 
+  Msg_Received == 1  # or however you mark "a message was received"
+)
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = reg_data_nudged_2024,
+  family = binomial
+))
+
+
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged_2024, Reg_Orientation_Cat == "Prevention"),
+  family = binomial
+))
+
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged_2024, Reg_Orientation_Cat == "Neutral"),
+  family = binomial
+))
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged_2024, Reg_Orientation_Cat == "Promotion"),
+  family = binomial
+))
+
+
+
 ## All  --------------------------------------------------------------------
 
 
 ### Does Nudging (general) increase the chance of reporting? ------------------------------
-summary(glmer(Report ~ Msg_Received + (1 + Date | User_ID),
+summary(glmer(Report ~ Msg_Received + (1 + Day_of_Year | User_ID),
               data = reg_data,
               family = binomial))
 
 
-# Receiving a nudge significantly increases the probability of reporting (β = 0.524, p < 0.001, exact p = 7.66e-13)
+
+# Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) ['glmerMod']
+# Family: binomial  ( logit )
+# Formula: Report ~ Msg_Received + (1 + Day_of_Year | User_ID)
+# Data: reg_data
+# 
+# AIC      BIC   logLik deviance df.resid 
+# 33831.7  33879.7 -16910.8  33821.7   110395 
+# 
+# Scaled residuals: 
+#   Min       1Q   Median       3Q      Max 
+# -12.9413  -0.1989  -0.1188  -0.0766  11.7892 
+# 
+# Random effects:
+#   Groups  Name        Variance Std.Dev. Corr
+# User_ID (Intercept) 2.43739  1.5612       
+# Day_of_Year 0.09721  0.3118   0.18
+# Number of obs: 110400, groups:  User_ID, 600
+# 
+# Fixed effects:
+#   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept)   -4.02787    0.07559 -53.287   <2e-16 ***
+#   Msg_Received1  0.51100    0.05251   9.732   <2e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Correlation of Fixed Effects:
+#   (Intr)
+# Msg_Recevd1 -0.066
 
 
+
+
+
+
+
+summary(glmer(
+  Report ~ Msg_Received + Day_of_Year + (1 + Day_of_Year | User_ID),
+  family = binomial, data = reg_data
+)) 
 
 
 ### Does nudging increase the total number (intensity) of reporting ------------------------------
 
 
-summary(glmer(total_reports ~ Msg_Received + (1 + Date|User_ID), 
+summary(glmer(total_reports ~ Msg_Received + (1 + Day_of_Year|User_ID), 
               data = reg_data, 
               family = poisson)) 
 
 
-
-
-
-# receiving a nudge significantly increases the total number of reports (β = 0.338, p < 0.001, exact p = 1.05e-13).
 
 
 ### Does the framing of  the nudge matter ----------------------
@@ -310,42 +333,52 @@ levels(reg_data$Msg_Type)
 reg_data$Msg_Type <- relevel(reg_data$Msg_Type, ref = "None") #set the level to none
 
 
-summary(glmer(Report ~ Msg_Type + (1 + Date | User_ID),
+
+
+summary(glmer(Report ~ Msg_Type + (1 | User_ID),
               data = reg_data,
               family = binomial(link = "logit")))
 
 
 
-# all framed nudges significantly increase the probability of reporting compared to no nudge, with the Vigilant frame having 
-# the strongest effect (β = 0.640, p < 0.001, exact p = 2.35e-08), followed by Eager (β = 0.563, p < 0.001, exact p = 1.61e-05)   
-# and Neutral (β = 0.326, p = 0.0182). 
-
-
-
-### Does agreement between framing and regulatory orientation impact reporting ----------------------
-
-#### Vigilant/Prevention ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-              data = reg_data[reg_data$Reg_Orientation_Cat == "Prevention", ], 
+summary(glmer(Report ~ Msg_Type + (1 + Day_of_Year | User_ID),
+              data = reg_data,
               family = binomial(link = "logit")))
 
-#new result near significance for vigilant 0.0822  and increases
-# new results insignificant p = 0.203 
-# estimated log-odds increase of 0.32 (SE = 0.159, p = 0.044)
 
 
-#### Eager/Promotion ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-              data = reg_data[reg_data$Reg_Orientation_Cat == "Promotion", ], 
-              family = binomial(link = "logit")))
+### Does agreement between framing and regulatory orientation impact reporting ---------------------
 
-# insiginificant 0.92
-# new results STILL insignificant p=  0.265
-# estimated log-odds of -0.53 (SE = 0.476, p = 0.269)
+reg_data_nudged<- subset(
+  reg_data, 
+  Msg_Received == 1  # or however you mark "a message was received"
+)
 
-#### Neutral/Neutral (not sure if important) ----------------------
-summary(glmer(Report ~ Orientation_Nudge_Agreement + (1 + Date|User_ID), 
-              data = reg_data[reg_data$Reg_Orientation_Cat == "Neutral", ], 
-              family = binomial(link = "logit")))
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = reg_data_nudged,
+  family = binomial
+))
 
-#insiginificant with outliers estimated log-odds of -0.12 (SE = 0.294, p = 0.692)
+
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged, Reg_Orientation_Cat == "Prevention"),
+  family = binomial
+))
+
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged, Reg_Orientation_Cat == "Neutral"),
+  family = binomial
+))
+
+summary(glmer(
+  Report ~ Orientation_Nudge_Agreement + (1 | User_ID),
+  data = subset(reg_data_nudged, Reg_Orientation_Cat == "Promotion"),
+  family = binomial
+))
+
+
